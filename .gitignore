@@ -1,0 +1,61 @@
+[Bb]uild/
+[Oo]ut/
+cmake-build-*/
+
+# Ignore specific CMake cache and generated files if out-of-source builds fail
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Ignore user-specific CMake presets (keep CMakePresets.json if shared)
+CMakeUserPresets.json
+CMakeLists.txt.user*
+
+# ==========================================
+# 2. Compiled C++ Objects, Libraries, and Executables
+# ==========================================
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Static and Dynamic Libraries
+*.lib
+*.a
+*.la
+*.lai
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Debug symbols
+*.pdb
+*.dSYM/
+*.su
+*.idb
+
+# VS Code
+.vscode/
+
+MUJOCO_LOG.TXT
