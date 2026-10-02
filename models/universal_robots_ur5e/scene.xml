@@ -17,5 +17,19 @@
   <worldbody>
     <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
     <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+    <body name="my_cube" pos="-1.0 0.0 1.5">
+      <joint name="slide_x" type="slide" axis="1 0 0" range="-2.0 2.0" damping="5.0" />
+      <joint name="slide_y" type="slide" axis="0 1 0" range="-2.0 2.0" damping="5.0" />
+      <joint name="slide_z" type="slide" axis="0 0 1" />
+
+      <geom type="box" size="0.02 0.02 0.02" rgba="0 0.7 0 0.5" />
+    </body>
   </worldbody>
+
+  <actuator>
+    <!--  Reduced 'kp' and matched 'ctrlrange' boundaries for smooth UI handling -->
+    <position name="ui_x_control" joint="slide_x" ctrlrange="-2.0 2.0" kp="20" />
+    <position name="ui_y_control" joint="slide_y" ctrlrange="-2.0 2.0" kp="20" />
+    
+  </actuator>
 </mujoco>

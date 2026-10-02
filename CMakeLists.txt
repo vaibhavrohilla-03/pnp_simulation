@@ -7,6 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_path(MUJOCO_INCLUDE_DIR mujoco/mujoco.h PATHS /opt/mujoco/include)
 find_library(MUJOCO_LIBRARY  mujoco PATHS /opt/mujoco/lib)
 
+
+add_subdirectory(thirdparty)
+
 add_library(mujoco::mujoco SHARED IMPORTED)
 set_target_properties(mujoco::mujoco PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${MUJOCO_INCLUDE_DIR}"
@@ -17,7 +20,8 @@ add_executable(playground src/main.cpp)
 target_include_directories(playground PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
-target_link_libraries(playground PRIVATE 
+target_link_libraries(playground PRIVATE
+    glfw
     mujoco::mujoco)
 target_compile_definitions(playground PRIVATE
      MODEL_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/models\"

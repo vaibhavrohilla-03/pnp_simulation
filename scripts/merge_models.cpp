@@ -13,7 +13,6 @@ int main() {
 
     mjsElement* site_element = mjs_findElement(spec_ur5, mjOBJ_SITE, "attachment_site");
     
-
     mjs_attach(site_element, spec_gripper->element, "gripper_", "");
 
     std::string save = model_dir + "/universal_robots_ur5e/ur5e_with_gripper.xml";
