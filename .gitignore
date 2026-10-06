@@ -59,3 +59,5 @@ CMakeLists.txt.user*
 .vscode/
 
 MUJOCO_LOG.TXT
+MJMODEL.TXT
+study_reference

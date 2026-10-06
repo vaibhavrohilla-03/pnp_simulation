@@ -1,4 +1,5 @@
 <mujoco model="ur5e scene">
+  <option gravity="0 0 -9.81" />
   <include file="ur5e_with_gripper.xml" />
 
   <visual>
@@ -20,9 +21,9 @@
     <body name="my_cube" pos="-1.0 0.0 1.5">
       <joint name="slide_x" type="slide" axis="1 0 0" range="-2.0 2.0" damping="5.0" />
       <joint name="slide_y" type="slide" axis="0 1 0" range="-2.0 2.0" damping="5.0" />
-      <joint name="slide_z" type="slide" axis="0 0 1" />
+      <joint name="slide_z" type="slide" axis="0 0 1" damping="0.0"/>
 
-      <geom type="box" size="0.02 0.02 0.02" rgba="0 0.7 0 0.5" />
+      <geom type="box" size="0.02 0.02 0.02" rgba="0 0.7 0 0.5" mass="1.0"/>
     </body>
   </worldbody>
 

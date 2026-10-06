@@ -1,6 +1,9 @@
 #include <iostream>
+#include <cmath>
+
 #include "mujoco/mujoco.h"
 #include "GLFW/glfw3.h"
+#include "fk_solver_ur5.hpp"
 
 struct visual {
 
@@ -28,6 +31,8 @@ mjtNum previous_time = 0;
 float_t ctrl_update_freq = 100;
 mjtNum last_update = 0.0;
 mjtNum ctrl;
+
+int joint_idx = 0;
 
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -81,6 +86,29 @@ void scroll(GLFWwindow* window, double xoffset, double yoffset)
     mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.05*yoffset, &visualdata.cam);
 }
 
+void applydragforce_cube(double drag_coefficient, bool cached) {
+
+    if(!cached) {
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, "slide_x");
+        joint_idx = model->jnt_dofadr[joint_id];
+        cached = true;
+    }
+
+    double vx, vy, vz = 0.0;
+    
+    vx = data->qvel[joint_idx];
+    vy = data->qvel[joint_idx + 1];
+    vz = data->qvel[joint_idx + 2];
+
+    double v = std::sqrt(vx*vx + vy*vy + vz*vz);
+
+
+    data->qfrc_applied[joint_idx] = -drag_coefficient * v * vx;
+    data->qfrc_applied[joint_idx + 1] = -drag_coefficient * v * vy;
+    data->qfrc_applied[joint_idx + 2] = -drag_coefficient * v * vz;
+
+}
+
 void setup_render() {
 
     if(!glfwInit()) {
@@ -110,26 +138,45 @@ void setup_render() {
     glfwSetScrollCallback(visualdata.window, scroll);
 }
 
+void updateframe() {
+    mjrRect viewport = {0, 0, 0, 0};
+    glfwGetFramebufferSize(visualdata.window, &viewport.width, &viewport.height);
+        
+    visualdata.opt.frame = mjFRAME_BODY;
+    mjv_updateScene(model, data, &visualdata.opt, NULL, &visualdata.cam, mjCAT_ALL, &visualdata.scn);
+    mjr_render(viewport, &visualdata.scn, &visualdata.con);
+    
+    glfwSwapBuffers(visualdata.window);
+        
+    glfwPollEvents();
+}
+
 void simulate_loop() {
 
+    bool cache = false;
+    FK_Solver solver("wrist_3_link", model, data);
+    int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link");
+
+    int frame = 0;
     while(!glfwWindowShouldClose(visualdata.window)) {
 
         mjtNum simstart = data->time;
 
         while(data->time - simstart < 1.0/60.0) {
-            mj_step(model, data);
-        
+            
+            applydragforce_cube(10, cache);
+            mj_step(model, data);    
         }
-        mjrRect viewport = {0, 0, 0, 0};
-        glfwGetFramebufferSize(visualdata.window, &viewport.width, &viewport.height);
+        if(++frame % 30 == 0) {
+            Eigen::Vector3d my_pos = solver();               
+            Eigen::Vector3d mj_pos(data->xpos + 3 * ee_id);
+            
+            std::printf("from solver : %lf, %lf, %lf\n", my_pos.x(), my_pos.y(), my_pos.z());
+            std::printf("from mj_solver : %lf, %lf, %lf\n", mj_pos.x(), mj_pos.y(), mj_pos.z());
+            std::cout << "Error: " << (my_pos - mj_pos).norm() << " m\n";
+        }
+        updateframe();
         
-        mjv_updateScene(model, data, &visualdata.opt, NULL, &visualdata.cam, mjCAT_ALL, &visualdata.scn);
-        mjr_render(viewport, &visualdata.scn, &visualdata.con);
-        
-        glfwSwapBuffers(visualdata.window);
-        
-        glfwPollEvents();
-
     }
 }
 
@@ -141,6 +188,8 @@ void clean() {
     mj_deleteData(data);
     mj_deleteModel(model);
 }
+
+
 
 void simulate(std::string& file) {
 
@@ -157,7 +206,7 @@ void simulate(std::string& file) {
 
 int main(int argc, char** argv) {
 
-    std::string file = std::string(MODEL_DIR) + "/universal_robots_ur5e/scene.xml";
+    std::string file = std::string(MODEL_DIR) + "/universal_robots_ur5e/ur5e_with_gripper.xml";
     simulate(file); 
     clean();   
     return 0;
