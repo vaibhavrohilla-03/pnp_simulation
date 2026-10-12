@@ -4,6 +4,7 @@
 #include "mujoco/mujoco.h"
 #include "GLFW/glfw3.h"
 #include "fk_solver_ur5.hpp"
+#include "ik_solver.hpp"
 
 struct visual {
 
@@ -109,6 +110,24 @@ void applydragforce_cube(double drag_coefficient, bool cached) {
 
 }
 
+Eigen::Vector3d get_cube_position(const mjModel* model, const mjData* data, const std::string& cube_name) {
+
+    int body_id = mj_name2id(model, mjOBJ_BODY, cube_name.c_str());
+
+        return Eigen::Vector3d(
+            data->xpos[3 * body_id + 0],
+            data->xpos[3 * body_id + 1],
+            data->xpos[3 * body_id + 2]
+        );
+}
+
+void set_arm_control(const mjModel* model, mjData* data, const Eigen::VectorXd& q_target) {
+    
+    for (int i = 0; i < q_target.size(); ++i) {
+        data->ctrl[i] = q_target(i);
+    }
+}
+
 void setup_render() {
 
     if(!glfwInit()) {
@@ -154,27 +173,48 @@ void updateframe() {
 void simulate_loop() {
 
     bool cache = false;
-    FK_Solver solver("wrist_3_link", model, data);
-    int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link");
+    // FK_Solver solver("wrist_3_link", model, data);
+    Ik_solver solver("", "attachment_site", model, data);
+    const int num_joints = solver.get_num_joints(); 
+    
+    Eigen::Vector3d cube_pos = get_cube_position(model, data, "my_cube");
+    //int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link");
+
+    Eigen::Vector3d target_ee_pos = cube_pos;
+    Eigen::Matrix3d target_ee_rot = (Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX())).toRotationMatrix();
+
+    Eigen::VectorXd initial_pos(num_joints);
+    for (int i = 0; i < num_joints; ++i) {
+        initial_pos(i) = data->qpos[i];
+    }
+
+    Eigen::VectorXd solution(num_joints);
+    bool solved = solver(target_ee_pos, target_ee_rot, initial_pos, solution, 1.0);
 
     int frame = 0;
+
+
     while(!glfwWindowShouldClose(visualdata.window)) {
 
         mjtNum simstart = data->time;
 
         while(data->time - simstart < 1.0/60.0) {
-            
+
+            if (solved) {
+                set_arm_control(model, data, solution);
+            }
+
             applydragforce_cube(10, cache);
             mj_step(model, data);
         }
-        if(++frame % 30 == 0) {
-            Eigen::Vector3d my_pos = solver();               
-            Eigen::Vector3d mj_pos(data->xpos + 3 * ee_id);
+        // if(++frame % 30 == 0) {
+        //     Eigen::Vector3d my_pos = solver();               
+        //     Eigen::Vector3d mj_pos(data->xpos + 3 * ee_id);
             
-            std::printf("from solver : %lf, %lf, %lf\n", my_pos.x(), my_pos.y(), my_pos.z());
-            std::printf("from mj_solver : %lf, %lf, %lf\n", mj_pos.x(), mj_pos.y(), mj_pos.z());
-            std::cout << "Error: " << (my_pos - mj_pos).norm() << " m\n";
-        }
+        //     std::printf("from solver : %lf, %lf, %lf\n", my_pos.x(), my_pos.y(), my_pos.z());
+        //     std::printf("from mj_solver : %lf, %lf, %lf\n", mj_pos.x(), mj_pos.y(), mj_pos.z());
+        //     std::cout << "Error: " << (my_pos - mj_pos).norm() << " m\n";
+        // }
         updateframe();
         
     }
@@ -198,13 +238,15 @@ void simulate(std::string& file) {
     }
     data = mj_makeData(model);
 
+    mj_resetDataKeyframe(model, data, 0);
+    mj_forward(model, data);
     setup_render();
     simulate_loop();
 }
 
 int main(int argc, char** argv) {
 
-    std::string file = std::string(MODEL_DIR) + "/universal_robots_ur5e/ur5e_with_gripper.xml";
+    std::string file = std::string(MODEL_DIR) + "/universal_robots_ur5e/scene.xml";
     simulate(file); 
     clean();   
     return 0;
