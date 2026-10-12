@@ -165,7 +165,7 @@ void simulate_loop() {
         while(data->time - simstart < 1.0/60.0) {
             
             applydragforce_cube(10, cache);
-            mj_step(model, data);    
+            mj_step(model, data);
         }
         if(++frame % 30 == 0) {
             Eigen::Vector3d my_pos = solver();               
@@ -188,8 +188,6 @@ void clean() {
     mj_deleteData(data);
     mj_deleteModel(model);
 }
-
-
 
 void simulate(std::string& file) {
 

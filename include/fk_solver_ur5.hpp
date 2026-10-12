@@ -1,4 +1,5 @@
-#include <iostream>
+#pragma once
+
 #include <eigen3/Eigen/Eigen>
 #include "mujoco/mujoco.h"
 class FK_Solver {
@@ -20,7 +21,7 @@ class FK_Solver {
 
             kinematic_tree.push_back(_parent_id);
             std::reverse(kinematic_tree.begin(), kinematic_tree.end());
-
+            
         }
         std::vector<int> kinematic_tree;
 

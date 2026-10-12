@@ -22,8 +22,11 @@
       <joint name="slide_x" type="slide" axis="1 0 0" range="-2.0 2.0" damping="5.0" />
       <joint name="slide_y" type="slide" axis="0 1 0" range="-2.0 2.0" damping="5.0" />
       <joint name="slide_z" type="slide" axis="0 0 1" damping="0.0"/>
-
       <geom type="box" size="0.02 0.02 0.02" rgba="0 0.7 0 0.5" mass="1.0"/>
+    </body>
+    <body name="target" pos="0.5 0 .5" quat="0 1 0 0" mocap="true">
+      <geom type="box" size=".05 .05 .05" contype="0" conaffinity="0" rgba=".6 .3 .3 .5" />
+      <site type="sphere" size="0.01" rgba="0 0 1 1" group="1" />
     </body>
   </worldbody>
 

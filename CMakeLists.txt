@@ -18,19 +18,27 @@ set_target_properties(mujoco::mujoco PROPERTIES
 
 add_executable(playground src/main.cpp)
 
+# add_library(utils STATIC
+#     Utils/Utils.h
+# )
+
 target_include_directories(playground PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Utils"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 
 target_sources(playground PRIVATE
     src/fk_solver_ur5.cpp
+    src/ik_solver.cpp
 )
 
 
 target_link_libraries(playground PRIVATE
     glfw
     mujoco::mujoco
-    Eigen3::Eigen)
+    Eigen3::Eigen
+    )
+
 target_compile_definitions(playground PRIVATE
      MODEL_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/models\"
 )
