@@ -1,13 +1,12 @@
 #include "ik_solver.hpp"
 #include "Utils.h"
-#include <iostream>
 #include <cmath>
 
 
 
 
 bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            double* initial_guess, double* solution, const int num_joints, double smoothness) {
+            double* initial_guess, double* solution, const size_t num_joints, double convergence) {
         
         Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
         Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
@@ -18,7 +17,7 @@ bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_
 
         Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess, num_joints);
         
-        return solve(pos, rotation, guess, solution, smoothness);
+        return solve(pos, rotation, guess, solution, convergence);
     }
 
 
@@ -26,7 +25,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
                     Eigen::Matrix3d& target_ee_rotation, 
                     Eigen::VectorXd& initial_guess, 
                     double* solution,
-                    double smoothness) {
+                    double convergence) {
 
     constexpr double eps_omega = 1e-3; 
     constexpr double eps_v     = 1e-4; 
@@ -36,13 +35,12 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
     const int nq = _model->nq;
 
     Eigen::VectorXd theta = initial_guess;
-    size_t iterations = 50;
     Eigen::Matrix4d T_sd = Utils::create_HomogenousMatrix(target_ee_pos, target_ee_rotation);
 
     std::vector<mjtNum> jacp(3 * nv);
     std::vector<mjtNum> jacr(3 * nv);
 
-    for (size_t i = 0; i < iterations; ++i) {
+    for (size_t i = 0; i < _iterations; ++i) {
         
         mju_copy(_data_ik->qpos, _data->qpos, nq);
 
@@ -68,7 +66,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
     
         if (errors[0] < eps_omega && errors[1] < eps_v) {
             Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
-            std::printf("Found solution");
+            std::printf("Found solution\n");
             return true;
         }
 
@@ -91,11 +89,11 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
 
         Eigen::VectorXd delta_theta = J_b.completeOrthogonalDecomposition().solve(Vb);
 
-        theta += smoothness * delta_theta;
+        theta += convergence * delta_theta;
     }
 
     Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
-    std::printf("can't reach the damn position");
+    std::printf("can't reach the damn position\n");
     return false;
 
 }

@@ -5,8 +5,8 @@
 class Ik_solver {
 
     public:
-        Ik_solver(const std::string& base_body, const std::string& ee_site, const mjModel* model, const mjData* data) : 
-            _ee_site(ee_site),_base(base_body), _model(model), _data(data)  {
+        Ik_solver(const std::string& base_body, const std::string& ee_site, const mjModel* model, const mjData* data, const int iterations = 20) : 
+            _ee_site(ee_site),_base(base_body), _model(model), _data(data), _iterations(iterations)  {
 
                 if(_base == "") {
                     _base_id = 1;
@@ -41,7 +41,7 @@ class Ik_solver {
         }   
 
         bool operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            double* initial_guess, double* solution, const int num_joints, double smoothness);
+            double* initial_guess, double* solution, const size_t num_joints, double convergence);
             
         inline const int get_num_joints() {return _qpos_indices.size();}
 
@@ -54,6 +54,7 @@ class Ik_solver {
 
 
     private:
+        int _iterations;
         const std::string _ee_site;
         int _ee_site_id;
 
@@ -72,6 +73,6 @@ class Ik_solver {
             Eigen::Matrix3d& target_ee_rotation, 
             Eigen::VectorXd& initial_guess, 
             double* solution, 
-            double smoothness);
+            double convergence);
         
 };

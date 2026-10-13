@@ -3,7 +3,7 @@
 
 #include "mujoco/mujoco.h"
 #include "GLFW/glfw3.h"
-#include "fk_solver_ur5.hpp"
+// #include "fk_solver_ur5.hpp"
 #include "ik_solver.hpp"
 
 struct visual {
@@ -173,38 +173,36 @@ void simulate_loop() {
 
     bool cache = false;
     // FK_Solver solver("wrist_3_link", model, data);
-    Ik_solver solver("", "attachment_site", model, data);
-    const int num_joints = solver.get_num_joints(); 
-    
-    double cube_pos[3];
-    get_cube_position(model, data, "my_cube", cube_pos);
-    //int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link");
-
-    
-    double target_ee_rot[] = {3.14, 0, 0}; 
+    Ik_solver solver("", "gripper_pinch", model, data);
+    const size_t num_joints = solver.get_num_joints(); 
+    //int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link"); 
 
     double initial_pos[num_joints];
     for (int i = 0; i < num_joints; ++i) {
         initial_pos[i] = data->qpos[i];
     }
-
     double solution[num_joints];
-    bool solved = solver(cube_pos, target_ee_rot, initial_pos, solution,num_joints, 0.5);
 
     int frame = 0;
-
-
+    double target_rot[3] = {3.14, 0, 0};
     while(!glfwWindowShouldClose(visualdata.window)) {
+        
+        double target_pos[3];
+        get_cube_position(model, data, "my_cube", target_pos);
+
+        for(size_t i = 0; i < num_joints; ++i) {
+            initial_pos[i] = data->qpos[i];
+        }
+
+        bool solved = solver(target_pos, target_rot, initial_pos, solution, num_joints, 0.5);
 
         mjtNum simstart = data->time;
-
         while(data->time - simstart < 1.0/60.0) {
 
             if (solved) {
-                set_arm_control(model, data, solution,num_joints);
+                set_arm_control(model, data, solution, num_joints);
             }
-
-            applydragforce_cube(10, cache);
+        //   applydragforce_cube(10, cache);
             mj_step(model, data);
         }
         // if(++frame % 30 == 0) {
