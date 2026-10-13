@@ -40,11 +40,9 @@ class Ik_solver {
         }
         }   
 
-        inline bool operator()(Eigen::Vector3d& target_ee_pos,Eigen::Matrix3d& target_ee_rotation, 
-                                Eigen::VectorXd& initial_guess, Eigen::VectorXd& solution, double smoothness) {
-                    return solve(target_ee_pos, target_ee_rotation, initial_guess, solution, smoothness);
-        }
-
+        bool operator()(const double* target_ee_pos, const double* target_ee_rotation, 
+            double* initial_guess, double* solution, const int num_joints, double smoothness);
+            
         inline const int get_num_joints() {return _qpos_indices.size();}
 
 
@@ -73,7 +71,7 @@ class Ik_solver {
         bool solve(Eigen::Vector3d& target_ee_pos, 
             Eigen::Matrix3d& target_ee_rotation, 
             Eigen::VectorXd& initial_guess, 
-            Eigen::VectorXd& solution, 
+            double* solution, 
             double smoothness);
         
 };

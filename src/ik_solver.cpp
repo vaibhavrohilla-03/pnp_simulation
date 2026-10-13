@@ -3,10 +3,29 @@
 #include <iostream>
 #include <cmath>
 
+
+
+
+bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_rotation, 
+            double* initial_guess, double* solution, const int num_joints, double smoothness) {
+        
+        Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
+        Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
+        Eigen::AngleAxisd yaw(target_ee_rotation[2], Eigen::Vector3d::UnitZ());
+        
+        Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
+        Eigen::Matrix3d rotation = (roll * pitch * yaw).toRotationMatrix();
+
+        Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess, num_joints);
+        
+        return solve(pos, rotation, guess, solution, smoothness);
+    }
+
+
 bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos, 
                     Eigen::Matrix3d& target_ee_rotation, 
                     Eigen::VectorXd& initial_guess, 
-                    Eigen::VectorXd& solution,
+                    double* solution,
                     double smoothness) {
 
     constexpr double eps_omega = 1e-3; 
@@ -48,8 +67,8 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
         Eigen::Matrix<double, 6, 1> Vb = Utils::get_twist_error(errors, T_bd);
     
         if (errors[0] < eps_omega && errors[1] < eps_v) {
-            solution = theta;
-            std::printf("Found solution ");
+            Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
+            std::printf("Found solution");
             return true;
         }
 
@@ -75,7 +94,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
         theta += smoothness * delta_theta;
     }
 
-    solution = theta;
+    Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
     std::printf("can't reach the damn position");
     return false;
 

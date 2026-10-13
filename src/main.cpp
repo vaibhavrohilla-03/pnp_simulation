@@ -110,21 +110,20 @@ void applydragforce_cube(double drag_coefficient, bool cached) {
 
 }
 
-Eigen::Vector3d get_cube_position(const mjModel* model, const mjData* data, const std::string& cube_name) {
+void get_cube_position(const mjModel* model, const mjData* data, 
+    const std::string& cube_name, double (&pos)[3]) {
 
     int body_id = mj_name2id(model, mjOBJ_BODY, cube_name.c_str());
 
-        return Eigen::Vector3d(
-            data->xpos[3 * body_id + 0],
-            data->xpos[3 * body_id + 1],
-            data->xpos[3 * body_id + 2]
-        );
+    pos[0] = data->xpos[3 * body_id];
+    pos[1] = data->xpos[3 * body_id + 1];
+    pos[2] = data->xpos[3 * body_id + 2];
 }
 
-void set_arm_control(const mjModel* model, mjData* data, const Eigen::VectorXd& q_target) {
+void set_arm_control(const mjModel* model, mjData* data, const double* q_target, int num_joints) {
     
-    for (int i = 0; i < q_target.size(); ++i) {
-        data->ctrl[i] = q_target(i);
+    for (int i = 0; i < num_joints; ++i) {
+        data->ctrl[i] = q_target[i];
     }
 }
 
@@ -161,7 +160,7 @@ void updateframe() {
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(visualdata.window, &viewport.width, &viewport.height);
         
-    visualdata.opt.frame = mjFRAME_BODY;
+    //visualdata.opt.frame = mjFRAME_BODY;
     mjv_updateScene(model, data, &visualdata.opt, NULL, &visualdata.cam, mjCAT_ALL, &visualdata.scn);
     mjr_render(viewport, &visualdata.scn, &visualdata.con);
     
@@ -177,19 +176,20 @@ void simulate_loop() {
     Ik_solver solver("", "attachment_site", model, data);
     const int num_joints = solver.get_num_joints(); 
     
-    Eigen::Vector3d cube_pos = get_cube_position(model, data, "my_cube");
+    double cube_pos[3];
+    get_cube_position(model, data, "my_cube", cube_pos);
     //int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link");
 
-    Eigen::Vector3d target_ee_pos = cube_pos;
-    Eigen::Matrix3d target_ee_rot = (Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX())).toRotationMatrix();
+    
+    double target_ee_rot[] = {3.14, 0, 0}; 
 
-    Eigen::VectorXd initial_pos(num_joints);
+    double initial_pos[num_joints];
     for (int i = 0; i < num_joints; ++i) {
-        initial_pos(i) = data->qpos[i];
+        initial_pos[i] = data->qpos[i];
     }
 
-    Eigen::VectorXd solution(num_joints);
-    bool solved = solver(target_ee_pos, target_ee_rot, initial_pos, solution, 1.0);
+    double solution[num_joints];
+    bool solved = solver(cube_pos, target_ee_rot, initial_pos, solution,num_joints, 0.5);
 
     int frame = 0;
 
@@ -201,7 +201,7 @@ void simulate_loop() {
         while(data->time - simstart < 1.0/60.0) {
 
             if (solved) {
-                set_arm_control(model, data, solution);
+                set_arm_control(model, data, solution,num_joints);
             }
 
             applydragforce_cube(10, cache);
