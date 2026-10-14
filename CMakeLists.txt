@@ -37,6 +37,7 @@ target_link_libraries(playground PRIVATE
     glfw
     mujoco::mujoco
     Eigen3::Eigen
+    imgui
     )
 
 target_compile_definitions(playground PRIVATE

@@ -3,6 +3,7 @@
 
 #include "mujoco/mujoco.h"
 #include "GLFW/glfw3.h"
+#include "imgui.h"
 // #include "fk_solver_ur5.hpp"
 #include "ik_solver.hpp"
 

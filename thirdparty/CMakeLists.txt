@@ -5,9 +5,18 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+set(WANT_DOCS OFF CACHE BOOL "" FORCE)
+set(WANT_TESTS OFF CACHE INTERNAL "")
+set(WANT_EXAMPLES OFF CACHE INTERNAL "")
+set(WANT_DEMO OFF CACHE INTERNAL "")
+set(SHARED OFF CACHE INTERNAL "")
+set(WANT_PRIMITIVES ON CACHE INTERNAL "")
+set(WANT_IMAGE ON CACHE INTERNAL "")
+set(WANT_FONT ON CACHE INTERNAL "")
+set(WANT_TTF ON CACHE INTERNAL "")
     
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/glfw/CMakeLists.txt")
-    add_subdirectory(glfw)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glfw/CMakeLists.txt")
+    add_subdirectory(thirdparty/glfw)
 else()
     include(FetchContent)
     FetchContent_Declare(
@@ -19,8 +28,8 @@ else()
     FetchContent_MakeAvailable(glfw)
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/eigen/CMakeLists.txt")
-    add_subdirectory(eigen)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/eigen/CMakeLists.txt")
+    add_subdirectory(thirdparty/eigen)
 else()
     FetchContent_Declare(
     eigen
@@ -31,3 +40,30 @@ else()
     FetchContent_MakeAvailable(eigen)
 endif()
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/CMakeLists.txt")
+    add_subdirectory(thirdparty/imgui)
+else()
+
+    FetchContent_Declare(
+    imgui
+    URL https://github.com/ocornut/imgui/archive/refs/tags/v1.90.8.tar.gz
+    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+    EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(imgui)
+
+    add_library(imgui
+	${imgui_SOURCE_DIR}/imgui.cpp
+	${imgui_SOURCE_DIR}/imgui_draw.cpp
+	${imgui_SOURCE_DIR}/imgui_tables.cpp
+	${imgui_SOURCE_DIR}/imgui_widgets.cpp
+	${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+)
+target_include_directories(imgui PUBLIC 
+${imgui_SOURCE_DIR}
+${imgui_SOURCE_DIR}/backends
+)
+target_link_libraries(imgui PUBLIC 
+    glfw
+)
+endif()
