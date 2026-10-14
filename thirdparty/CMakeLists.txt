@@ -46,9 +46,9 @@ else()
 
     FetchContent_Declare(
     imgui
-    URL https://github.com/ocornut/imgui/archive/refs/tags/v1.90.8.tar.gz
-    DOWNLOAD_EXTRACT_TIMESTAMP FALSE
-    EXCLUDE_FROM_ALL
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG        docking
+    GIT_SHALLOW    TRUE
     )
     FetchContent_MakeAvailable(imgui)
 
@@ -58,6 +58,8 @@ else()
 	${imgui_SOURCE_DIR}/imgui_tables.cpp
 	${imgui_SOURCE_DIR}/imgui_widgets.cpp
 	${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+	${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+
 )
 target_include_directories(imgui PUBLIC 
 ${imgui_SOURCE_DIR}

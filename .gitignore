@@ -61,3 +61,4 @@ CMakeLists.txt.user*
 MUJOCO_LOG.TXT
 MJMODEL.TXT
 study_reference
+imgui.ini

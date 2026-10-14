@@ -4,6 +4,9 @@
 #include "mujoco/mujoco.h"
 #include "GLFW/glfw3.h"
 #include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 // #include "fk_solver_ur5.hpp"
 #include "ik_solver.hpp"
 
@@ -37,7 +40,9 @@ mjtNum ctrl;
 int joint_idx = 0;
 
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
-{
+{       
+    if(ImGui::GetIO().WantCaptureKeyboard) return;
+
     if( act==GLFW_PRESS && key==GLFW_KEY_BACKSPACE )
     {
         mj_resetData(model, data);
@@ -46,7 +51,8 @@ void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 }
 
 void mouse_button(GLFWwindow* window, int button, int act, int mods)
-{
+{   
+    if(ImGui::GetIO().WantCaptureMouse) return;
     visualdata.button_left =   (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT)==GLFW_PRESS);
     visualdata.button_middle = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE)==GLFW_PRESS);
     visualdata.button_right =  (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)==GLFW_PRESS);
@@ -56,7 +62,8 @@ void mouse_button(GLFWwindow* window, int button, int act, int mods)
 
 
 void mouse_move(GLFWwindow* window, double xpos, double ypos)
-{
+{   
+    if(ImGui::GetIO().WantCaptureMouse) return;
     if( !visualdata.button_left && !visualdata.button_middle && !visualdata.button_right )
         return;
 
@@ -84,7 +91,8 @@ void mouse_move(GLFWwindow* window, double xpos, double ypos)
 
 
 void scroll(GLFWwindow* window, double xoffset, double yoffset)
-{
+{   
+    if(ImGui::GetIO().WantCaptureMouse) return;
     mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.05*yoffset, &visualdata.cam);
 }
 
@@ -155,6 +163,14 @@ void setup_render() {
     glfwSetCursorPosCallback(visualdata.window, mouse_move);
     glfwSetMouseButtonCallback(visualdata.window, mouse_button);
     glfwSetScrollCallback(visualdata.window, scroll);
+
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+    
+    ImGui_ImplGlfw_InitForOpenGL(visualdata.window, true);
+    ImGui_ImplOpenGL3_Init();
+
 }
 
 void updateframe() {
@@ -164,9 +180,11 @@ void updateframe() {
     //visualdata.opt.frame = mjFRAME_BODY;
     mjv_updateScene(model, data, &visualdata.opt, NULL, &visualdata.cam, mjCAT_ALL, &visualdata.scn);
     mjr_render(viewport, &visualdata.scn, &visualdata.con);
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     
-    glfwSwapBuffers(visualdata.window);
-        
+    glfwSwapBuffers(visualdata.window);    
     glfwPollEvents();
 }
 
@@ -186,8 +204,23 @@ void simulate_loop() {
 
     int frame = 0;
     double target_rot[3] = {3.14, 0, 0};
+
+    int cube_x_act = mj_name2id(model, mjOBJ_ACTUATOR, "ui_x_control");
+    int cube_y_act = mj_name2id(model, mjOBJ_ACTUATOR, "ui_y_control");
+
+    double pos[3];
+    get_cube_position(model, data, "my_cube", pos);
+    
+    static float target_x = pos[0];
+    static float target_y = pos[1];
+
     while(!glfwWindowShouldClose(visualdata.window)) {
         
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         double target_pos[3];
         get_cube_position(model, data, "my_cube", target_pos);
 
@@ -201,6 +234,8 @@ void simulate_loop() {
         while(data->time - simstart < 1.0/60.0) {
 
             if (solved) {
+                data->ctrl[cube_x_act] = target_x;
+                data->ctrl[cube_y_act] = target_y;
                 set_arm_control(model, data, solution, num_joints);
             }
         //   applydragforce_cube(10, cache);
@@ -214,12 +249,29 @@ void simulate_loop() {
         //     std::printf("from mj_solver : %lf, %lf, %lf\n", mj_pos.x(), mj_pos.y(), mj_pos.z());
         //     std::cout << "Error: " << (my_pos - mj_pos).norm() << " m\n";
         // }
+        ImGui::Begin("IK & Simulation Control");
+            ImGui::Text("IK Status: %s", solved ? "Solved" : "Unreachable / Iterating");
+            ImGui::SliderFloat("cube_x", &target_x, -0.05f, 1.0f);
+            ImGui::SliderFloat("cube_y", &target_y, -0.05f, 1.0f);
+            
+            ImGui::Text("Target Pos: (%.2f, %.2f, %.2f)", target_pos[0], target_pos[1], target_pos[2]);
+
+            if (ImGui::Button("Reset Scene")) {
+                mj_resetDataKeyframe(model, data, 0);
+                mj_forward(model, data);
+            }
+            ImGui::End();
         updateframe();
         
     }
 }
 
 void clean() {
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     mjv_freeScene(&visualdata.scn);
     mjr_freeContext(&visualdata.con);
     glfwDestroyWindow(visualdata.window);
