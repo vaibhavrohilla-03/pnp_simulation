@@ -203,8 +203,7 @@ void simulate_loop() {
     double solution[num_joints];
 
     int frame = 0;
-    double target_rot[3] = {3.14, 0, 0};
-
+    
     int cube_x_act = mj_name2id(model, mjOBJ_ACTUATOR, "ui_x_control");
     int cube_y_act = mj_name2id(model, mjOBJ_ACTUATOR, "ui_y_control");
 
@@ -213,29 +212,30 @@ void simulate_loop() {
     
     static float target_x = pos[0];
     static float target_y = pos[1];
+    static float target_z = pos[2];
+    static float r_target_x = 0;
+    static float r_target_y = 0;
+    static float r_target_z = 3.14;
+
 
     while(!glfwWindowShouldClose(visualdata.window)) {
         
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        double target_pos[3];
-        get_cube_position(model, data, "my_cube", target_pos);
-
-        for(size_t i = 0; i < num_joints; ++i) {
+         double target_pos[3] = {target_x, target_y, target_z};
+         double target_rot[3] = {r_target_x, r_target_y, r_target_z};
+        
+         for(size_t i = 0; i < num_joints; ++i) {
             initial_pos[i] = data->qpos[i];
         }
-
         bool solved = solver(target_pos, target_rot, initial_pos, solution, num_joints, 0.5);
 
         mjtNum simstart = data->time;
         while(data->time - simstart < 1.0/60.0) {
 
             if (solved) {
-                data->ctrl[cube_x_act] = target_x;
-                data->ctrl[cube_y_act] = target_y;
                 set_arm_control(model, data, solution, num_joints);
             }
         //   applydragforce_cube(10, cache);
@@ -249,11 +249,15 @@ void simulate_loop() {
         //     std::printf("from mj_solver : %lf, %lf, %lf\n", mj_pos.x(), mj_pos.y(), mj_pos.z());
         //     std::cout << "Error: " << (my_pos - mj_pos).norm() << " m\n";
         // }
-        ImGui::Begin("IK & Simulation Control");
+        ImGui::Begin("IK");
             ImGui::Text("IK Status: %s", solved ? "Solved" : "Unreachable / Iterating");
-            ImGui::SliderFloat("cube_x", &target_x, -0.05f, 1.0f);
-            ImGui::SliderFloat("cube_y", &target_y, -0.05f, 1.0f);
-            
+            ImGui::SliderFloat("x", &target_x, -1.0f, 1.0f);
+            ImGui::SliderFloat("y", &target_y, -1.0f, 1.0f);
+            ImGui::SliderFloat("z", &target_z, -1.0f, 1.0f);
+            ImGui::SliderFloat("rot_x", &r_target_x, -3.14f, +3.14f);
+            ImGui::SliderFloat("rot_y", &r_target_y, -3.14f, +3.14f);
+            ImGui::SliderFloat("rot_z", &r_target_z, -3.14f, +3.14f);
+
             ImGui::Text("Target Pos: (%.2f, %.2f, %.2f)", target_pos[0], target_pos[1], target_pos[2]);
 
             if (ImGui::Button("Reset Scene")) {
