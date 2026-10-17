@@ -1,10 +1,6 @@
 #include "ik_solver.hpp"
 #include "Utils.h"
 #include <cmath>
-
-
-
-
 bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_rotation, 
             double* initial_guess, double* solution, const size_t num_joints, double convergence) {
         
@@ -13,7 +9,7 @@ bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_
         Eigen::AngleAxisd yaw(target_ee_rotation[2], Eigen::Vector3d::UnitZ());
         
         Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
-        Eigen::Matrix3d rotation = (roll * pitch * yaw).toRotationMatrix();
+        Eigen::Matrix3d rotation = (yaw * pitch * roll).toRotationMatrix();
 
         Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess, num_joints);
         
@@ -66,7 +62,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
     
         if (errors[0] < eps_omega && errors[1] < eps_v) {
             Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
-            std::printf("Found solution\n");
+            //std::printf("Found solution\n");
             return true;
         }
 
@@ -93,7 +89,36 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
     }
 
     Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
-    std::printf("can't reach the damn position\n");
+    //std::printf("can't reach the damn position\n");
     return false;
 
+}
+
+void Ik_solver::initialize(const std::string& site) {
+    
+    _base_id = mj_name2id(_model, mjOBJ_BODY, "base");
+    if (_base_id == -1) _base_id = 0;
+    _ee_site_id = mj_name2id(_model, mjOBJ_SITE, site.c_str());
+    _data_ik = mj_makeData(_model);
+    
+    if(_ee_site_id == -1) {return;}
+    
+    int ee_body_id = _model->site_bodyid[_ee_site_id];
+    int current = ee_body_id;
+    while (current != _base_id && current > 0) {
+        _kinematic_tree.push_back(current);
+        current = _model->body_parentid[current];
+    }
+    _kinematic_tree.push_back(_base_id);
+    std::reverse(_kinematic_tree.begin(), _kinematic_tree.end());
+    
+    for (int body_id : _kinematic_tree) {
+        int jnt_id = _model->body_jntadr[body_id];
+        if (jnt_id != -1) {
+            _qpos_indices.push_back(_model->jnt_qposadr[jnt_id]);
+            _dof_indices.push_back(_model->jnt_dofadr[jnt_id]);
+        }
+        
+    }
+        
 }

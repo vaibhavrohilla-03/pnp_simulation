@@ -162,7 +162,7 @@
                         <inertial pos="0 -2.70394e-05 0.0354675" quat="0.999999 -0.00152849 0 0" mass="0.777441" diaginertia="0.000260285 0.000225381 0.000152708"/>
                         <geom class="gripper_visual" quat="1 0 0 0" material="gripper_black" mesh="gripper_base"/>
                         <geom class="gripper_collision" quat="1 0 0 0" mesh="gripper_base"/>
-                        <site name="gripper_pinch" pos="0 0 0.145" group="5" rgba="0.9 0.9 0.9 1"/>
+                        <site name="gripper_pinch" pos="0 0 0.165" group="5" rgba="0.9 0.9 0.9 1"/>
                         <body name="gripper_right_driver" pos="0 0.0306011 0.054904">
                           <inertial pos="2.96931e-12 0.0177547 0.00107314" quat="0.681301 0.732003 0 0" mass="0.00899563" diaginertia="1.72352e-06 1.60906e-06 3.22006e-07"/>
                           <joint name="gripper_right_driver_joint" class="gripper_driver"/>
