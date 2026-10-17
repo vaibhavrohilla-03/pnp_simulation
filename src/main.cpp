@@ -9,6 +9,7 @@
 
 // #include "fk_solver_ur5.hpp"
 #include "ik_solver.hpp"
+#include "controller.hpp"
 
 struct visual {
 
@@ -192,8 +193,9 @@ void simulate_loop() {
 
     bool cache = false;
     // FK_Solver solver("wrist_3_link", model, data);
-    Ik_solver solver("", "gripper_pinch", model, data);
+    Ik_solver solver("gripper_pinch", model, data);
     const size_t num_joints = solver.get_num_joints(); 
+    Controller controller("gripper_pinch", model, data);
     //int ee_id = mj_name2id(model, mjOBJ_BODY, "wrist_3_link"); 
 
     double initial_pos[num_joints];
@@ -212,10 +214,12 @@ void simulate_loop() {
     
     static float target_x = pos[0];
     static float target_y = pos[1];
-    static float target_z = pos[2];
-    static float r_target_x = 0;
-    static float r_target_y = 0;
-    static float r_target_z = 3.14;
+    static float target_z = pos[2] + 0.1f;
+    static float r_target_x = 3.14159f;
+    static float r_target_y = 0.0f;
+    static float r_target_z = -1.57079f;
+    static bool use_osc_controller = true;
+    mj_forward(model, data);
 
 
     while(!glfwWindowShouldClose(visualdata.window)) {
@@ -226,6 +230,8 @@ void simulate_loop() {
 
          double target_pos[3] = {target_x, target_y, target_z};
          double target_rot[3] = {r_target_x, r_target_y, r_target_z};
+         std::vector<double> tau_cmd(num_joints);
+
         
          for(size_t i = 0; i < num_joints; ++i) {
             initial_pos[i] = data->qpos[i];
@@ -235,21 +241,27 @@ void simulate_loop() {
         mjtNum simstart = data->time;
         while(data->time - simstart < 1.0/60.0) {
 
-            if (solved) {
-                set_arm_control(model, data, solution, num_joints);
+            if (use_osc_controller) {
+                mj_step1(model, data);
+
+                if(solved) {
+                    controller(target_pos, target_rot, tau_cmd.data());
+                    controller.applyTorques(tau_cmd.data());
+                }
+
+                mj_step2(model, data);
+            } else {
+                if (solved) {
+                    set_arm_control(model, data, solution, num_joints);
+                }
+                mj_step(model, data);
             }
-        //   applydragforce_cube(10, cache);
-            mj_step(model, data);
         }
-        // if(++frame % 30 == 0) {
-        //     Eigen::Vector3d my_pos = solver();               
-        //     Eigen::Vector3d mj_pos(data->xpos + 3 * ee_id);
-            
-        //     std::printf("from solver : %lf, %lf, %lf\n", my_pos.x(), my_pos.y(), my_pos.z());
-        //     std::printf("from mj_solver : %lf, %lf, %lf\n", mj_pos.x(), mj_pos.y(), mj_pos.z());
-        //     std::cout << "Error: " << (my_pos - mj_pos).norm() << " m\n";
-        // }
-        ImGui::Begin("IK");
+        ImGui::Begin("Controller & IK");
+            if (ImGui::Checkbox("Use OSC Controller (Torque)", &use_osc_controller)) {
+                controller.setTorqueMode(use_osc_controller);
+            }
+            ImGui::Separator();
             ImGui::Text("IK Status: %s", solved ? "Solved" : "Unreachable / Iterating");
             ImGui::SliderFloat("x", &target_x, -1.0f, 1.0f);
             ImGui::SliderFloat("y", &target_y, -1.0f, 1.0f);

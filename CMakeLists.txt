@@ -30,6 +30,7 @@ target_include_directories(playground PRIVATE
 target_sources(playground PRIVATE
     src/fk_solver_ur5.cpp
     src/ik_solver.cpp
+    src/controller.cpp
 )
 
 
