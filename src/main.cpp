@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <cmath>
 
@@ -39,6 +40,17 @@ mjtNum last_update = 0.0;
 mjtNum ctrl;
 
 int joint_idx = 0;
+
+
+void scratchpad(mjModel* model) {
+    
+}
+
+void error_handler(const mjLogMessage* msg) {
+
+    std::printf("%s \n", msg->subject);
+
+}
 
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {       
@@ -151,11 +163,12 @@ void setup_render() {
     mjv_defaultCamera(&visualdata.cam);
     mjv_defaultOption(&visualdata.opt);
 
-    visualdata.scn.flags[mjRND_REFLECTION] = 1; 
-    visualdata.scn.flags[mjRND_SHADOW] = 1;
-    visualdata.scn.flags[mjRND_SKYBOX] = 1;
-
     mjv_defaultScene(&visualdata.scn);
+    
+    // visualdata.scn.flags[mjRND_REFLECTION] = 0; 
+    // visualdata.scn.flags[mjRND_SHADOW] = 0;
+    // visualdata.scn.flags[mjRND_SKYBOX] = 0;
+
     mjr_defaultContext(&visualdata.con);
     mjv_makeScene(model, &visualdata.scn, 2000);
     mjr_makeContext(model, &visualdata.con, mjFONTSCALE_150);
@@ -178,7 +191,10 @@ void updateframe() {
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(visualdata.window, &viewport.width, &viewport.height);
         
-    //visualdata.opt.frame = mjFRAME_BODY;
+    //visualdata.opt.frame = mjFRAME_BODY
+    //std::printf("%lf \n", model->opt.timestep);
+    visualdata.opt.flags[2] = mjVIS_JOINT;
+
     mjv_updateScene(model, data, &visualdata.opt, NULL, &visualdata.cam, mjCAT_ALL, &visualdata.scn);
     mjr_render(viewport, &visualdata.scn, &visualdata.con);
 
@@ -220,7 +236,6 @@ void simulate_loop() {
     static float r_target_z = -1.57079f;
     static bool use_osc_controller = true;
     mj_forward(model, data);
-
 
     while(!glfwWindowShouldClose(visualdata.window)) {
         
@@ -298,6 +313,8 @@ void clean() {
 
 void simulate(std::string& file) {
 
+    //mjfLogHandler lg_handler = mju_setLogHandler(error_handler);
+    
     char error[1000];
     model = mj_loadXML(file.c_str(), nullptr, error, sizeof(error));
     if(!model) {
@@ -309,6 +326,7 @@ void simulate(std::string& file) {
     mj_forward(model, data);
     setup_render();
     simulate_loop();
+    //mju_setLogHandler(lg_handler);
 }
 
 int main(int argc, char** argv) {

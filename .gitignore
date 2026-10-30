@@ -62,3 +62,4 @@ MUJOCO_LOG.TXT
 MJMODEL.TXT
 study_reference
 imgui.ini
+workspace.code-workspace

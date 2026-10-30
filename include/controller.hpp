@@ -55,8 +55,8 @@ class Controller {
         Eigen::VectorXd _torque_limits;
 
         bool _is_first_step;
-        Eigen::Vector3d _prev_target_pos; // <-- Persistent target pos
-        Eigen::Matrix3d _prev_target_rot; // <-- Persistent target rot
+        Eigen::Vector3d _prev_target_pos; 
+        Eigen::Matrix3d _prev_target_rot; 
 
         mjModel* _model;
         const mjData* _data;

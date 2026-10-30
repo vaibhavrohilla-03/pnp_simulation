@@ -74,7 +74,10 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
             M(r, c) = M_full(_dof_indices[r], _dof_indices[c]);
         }
     }
-    Eigen::Matrix<double, 6, 6> M_inv = M.inverse();
+
+    auto ldlt = M.ldlt();
+    Eigen::Matrix<double, 6, 6> M_inv = ldlt.solve(Eigen::Matrix<double,6,6>::Identity());
+    //Eigen::Matrix<double, 6, 6> M_inv = M.inverse();
     
     // Lambda = (J * M^-1 * J^T)^-1 with regularization for numerical stability
     Eigen::Matrix<double, 6, 6> Lambda_inv = J * M_inv * J.transpose();
