@@ -11,7 +11,7 @@ class Ik_solver {
         }   
 
         bool operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            double* initial_guess, double* solution, const size_t num_joints, double convergence);
+            double* initial_guess, double* solution, const size_t num_joints, double step_size);
             
         inline const int get_num_joints() {return _qpos_indices.size();}
 
@@ -41,7 +41,7 @@ class Ik_solver {
             Eigen::Matrix3d& target_ee_rotation, 
             Eigen::VectorXd& initial_guess, 
             double* solution, 
-            double convergence);
+            double step_size);
 
         
         

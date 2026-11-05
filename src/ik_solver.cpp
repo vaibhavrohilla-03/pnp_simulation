@@ -2,7 +2,7 @@
 #include "Utils.h"
 #include <cmath>
 bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            double* initial_guess, double* solution, const size_t num_joints, double convergence) {
+            double* initial_guess, double* solution, const size_t num_joints, double step_size) {
         
         Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
         Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
@@ -13,7 +13,7 @@ bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_
 
         Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess, num_joints);
         
-        return solve(pos, rotation, guess, solution, convergence);
+        return solve(pos, rotation, guess, solution, step_size);
     }
 
 
@@ -21,10 +21,10 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
                     Eigen::Matrix3d& target_ee_rotation, 
                     Eigen::VectorXd& initial_guess, 
                     double* solution,
-                    double convergence) {
+                    double step_size) {
 
-    constexpr double eps_omega = 1e-3; 
-    constexpr double eps_v     = 1e-4; 
+    constexpr double eps_omega = 1e-2; 
+    constexpr double eps_v     = 1e-3; 
 
     const int num_joints = _qpos_indices.size();
     const int nv = _model->nv;
@@ -85,7 +85,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
 
         Eigen::VectorXd delta_theta = J_b.completeOrthogonalDecomposition().solve(Vb);
 
-        theta += convergence * delta_theta;
+        theta += step_size * delta_theta;
     }
 
     Eigen::Map<Eigen::VectorXd>(solution, num_joints) = theta;
