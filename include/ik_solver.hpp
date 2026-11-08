@@ -6,14 +6,14 @@ class Ik_solver {
 
     public:
         inline Ik_solver(const std::string& ee_site, const mjModel* model, const mjData* data, const int iterations = 20) : 
-             _model(model), _data(data), _iterations(iterations)  {
+             _iterations(iterations), _model(model), _data(data)  {
                 initialize(ee_site);
         }   
 
         bool operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            double* initial_guess, double* solution, const size_t num_joints, double step_size);
+            std::vector<double>& initial_guess, std::vector<double>& solution, const size_t num_joints, double step_size);
             
-        inline const int get_num_joints() {return _qpos_indices.size();}
+        inline int get_num_joints() const {return _qpos_indices.size();}
 
         ~Ik_solver() {
             if (_data_ik) {

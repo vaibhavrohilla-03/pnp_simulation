@@ -15,16 +15,10 @@ void Trajectory3D::solve(const std::vector<double>& waypoints) {
 
         size_t num_points = _timestamps.size();
 
-        // waypoints is a flat vector: {x0,y0,z0, x1,y1,z1, ...}
-        // so its size must be exactly 3 * num_points
         if (waypoints.size() != num_points * 3) {
-            std::cerr << "Trajectory3D :: waypoints size mismatch. "
-                      << "Expected " << num_points * 3
-                      << ", got " << waypoints.size() << "\n";
+            std::fprintf(stderr, "Trajectory3D :: waypoints size mismatch. Expected %zu, got %zu \n", num_points * 3, waypoints.size());
             return;
         }
-
-        // Split the flat waypoints into 3 separate coordinate vectors
         std::vector<double> x_coords(num_points);
         std::vector<double> y_coords(num_points);
         std::vector<double> z_coords(num_points);
@@ -35,12 +29,10 @@ void Trajectory3D::solve(const std::vector<double>& waypoints) {
             z_coords[i] = waypoints[i * 3 + 2];
         }
 
-        // Build three independent 1D splines, all parameterized by _timestamps
         spline_x = Spline(_timestamps, x_coords);
         spline_y = Spline(_timestamps, y_coords);
         spline_z = Spline(_timestamps, z_coords);
 
-        // Build dense path for visualization
         std::vector<double> dense_t;
         dense_t.reserve(_sample);
 
@@ -56,7 +48,6 @@ void Trajectory3D::solve(const std::vector<double>& waypoints) {
         std::vector<double> dense_y = spline_y.dense_evaluate(dense_t);
         std::vector<double> dense_z = spline_z.dense_evaluate(dense_t);
 
-        // Interleave into flat dense_path: {x0,y0,z0, x1,y1,z1, ...}
         dense_path.clear();
         dense_path.reserve(_sample * 3);
         for (int i = 0; i < _sample; ++i) {
@@ -92,7 +83,7 @@ Trajectory3D::Spline::Spline(const std::vector<double>& points_x, const std::vec
         std::cerr << "Spline :: invalid points\n"; 
         return;
     }
-
+    
     std::vector<double> intervals(size_x - 1);
     for(size_t i = 0; i < size_x - 1; ++i) {
         intervals[i] = _points_x[i+1] - _points_x[i];
@@ -140,7 +131,7 @@ Trajectory3D::Spline::Spline(const std::vector<double>& points_x, const std::vec
 }
 
 
-std::vector<double> Trajectory3D::Spline::solve_tridiagonal(std::vector<double>& u, std::vector<double>& lambda, std::vector<double> d) {
+std::vector<double> Trajectory3D::Spline::solve_tridiagonal(const std::vector<double>& u, const std::vector<double>& lambda, const std::vector<double>& d) {
     
     const size_t m = d.size();
     if (m == 0 || u.size() != m || lambda.size() != m) {
@@ -152,9 +143,9 @@ std::vector<double> Trajectory3D::Spline::solve_tridiagonal(std::vector<double>&
     std::vector<double> d_prime(m);
 
     double b_0 = 2.0;
-    c_prime[0] = lambda[0] / 2.0;
-    d_prime[0] = d[0] / 2.0;
-
+    c_prime[0] = lambda[0] / b_0;
+    d_prime[0] = d[0] / b_0;
+    
     for (size_t i = 1; i < m; ++i) {
         double a_i = u[i];         
         double b_i = 2.0;          
@@ -179,7 +170,7 @@ std::vector<double> Trajectory3D::Spline::solve_tridiagonal(std::vector<double>&
     return M;
 }
 
-const double Trajectory3D::Spline::evaluate(double sample) const {
+double Trajectory3D::Spline::evaluate(double sample) const {
     
     const size_t n = _points_x.size() - 1; 
 
@@ -210,7 +201,7 @@ const double Trajectory3D::Spline::evaluate(double sample) const {
 }
 
 
-const double Trajectory3D::Spline::evaluate_velocity(double sample) const {
+double Trajectory3D::Spline::evaluate_velocity(double sample) const {
     
     const size_t n = _points_x.size() - 1;
     if (sample <= _points_x.front()) return 0.0;
@@ -235,7 +226,7 @@ const double Trajectory3D::Spline::evaluate_velocity(double sample) const {
 }
     
     
-const double Trajectory3D::Spline::evaluate_acceleration(double sample) const {
+double Trajectory3D::Spline::evaluate_acceleration(double sample) const {
     const size_t n = _points_x.size() - 1;
     if (sample <= _points_x.front()) return 0.0;
     if (sample >= _points_x.back())  return 0.0;

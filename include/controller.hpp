@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "mujoco/mujoco.h"
 #include <vector>
 #include <eigen3/Eigen/Eigen>
@@ -5,17 +7,15 @@ class Controller {
 
     public:
         Controller(const std::string& ee_site, mjModel* model, const mjData* data)
-        : _model(model), _data(data), _is_first_step(true)  {
+        : _is_first_step(true), _model(model), _data(data)  {
             
             Kp_pos = 100.0;
             Kd_pos = 20.0;
             Kp_rot = 50.0;
             Kd_rot = 10.0;
             Kp_null = 10.0;
-            Kd_null = 2.0;  
-                
+            Kd_null = 2.0;
             initialize(ee_site);
-          
     }
         double Kp_pos, Kd_pos;
         double Kp_rot, Kd_rot;

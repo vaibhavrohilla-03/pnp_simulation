@@ -2,9 +2,6 @@
 
 void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d& target_rot, Eigen::VectorXd& tau_out) {
 
-
-    double dt = _model->opt.timestep;
-    
     if (_is_first_step) {
         _prev_target_pos = target_pos;
         _prev_target_rot = target_rot;
@@ -42,7 +39,7 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
     Eigen::Map<Eigen::Matrix<double, 3, Eigen::Dynamic, Eigen::RowMajor>> Jr(jacr.data(), 3, nv);
     Eigen::Matrix<double, 6, 6> J;
     
-    for (int i = 0; i < _num_joints; ++i) {
+    for (size_t i = 0; i < _num_joints; ++i) {
         int dof = _dof_indices[i];
         J.col(i).head<3>() = Jp.col(dof);
         J.col(i).tail<3>() = Jr.col(dof);
@@ -50,7 +47,7 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
 
     Eigen::VectorXd qdot(_num_joints);
 
-    for (int i = 0; i < _num_joints; ++i) {
+    for (size_t i = 0; i < _num_joints; ++i) {
         int dof_idx = _dof_indices[i];
         qdot(i) = _data->qvel[dof_idx];
     }
@@ -69,8 +66,8 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
     mj_fullM(_model, _data, M_dense.data());
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> M_full(M_dense.data(), nv, nv);
     Eigen::Matrix<double, 6, 6> M;
-    for (int r = 0; r < _num_joints; ++r) {
-        for (int c = 0; c < _num_joints; ++c) {
+    for (size_t r = 0; r < _num_joints; ++r) {
+        for (size_t c = 0; c < _num_joints; ++c) {
             M(r, c) = M_full(_dof_indices[r], _dof_indices[c]);
         }
     }
@@ -91,12 +88,12 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
     Eigen::VectorXd tau_null = null_filter * tau_null_desired;
 
     Eigen::VectorXd tau_bias(_num_joints);
-    for (int i = 0; i < _num_joints; ++i) {
+    for (size_t i = 0; i < _num_joints; ++i) {
         tau_bias(i) = _data->qfrc_bias[_dof_indices[i]];
     }
 
     tau_out = tau_task + tau_null + tau_bias;
-    for (int i = 0; i < _num_joints; ++i) {
+    for (size_t i = 0; i < _num_joints; ++i) {
         tau_out(i) = std::clamp(tau_out(i), -_torque_limits(i), _torque_limits(i));
     }
 }

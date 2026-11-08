@@ -2,7 +2,7 @@
 #include "Utils.h"
 #include <cmath>
 bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            double* initial_guess, double* solution, const size_t num_joints, double step_size) {
+            std::vector<double>& initial_guess, std::vector<double>& solution, const size_t num_joints, double step_size) {
         
         Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
         Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
@@ -11,9 +11,9 @@ bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_
         Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
         Eigen::Matrix3d rotation = (yaw * pitch * roll).toRotationMatrix();
 
-        Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess, num_joints);
+        Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess.data(), num_joints);
         
-        return solve(pos, rotation, guess, solution, step_size);
+        return solve(pos, rotation, guess, solution.data(), step_size);
     }
 
 
@@ -23,8 +23,8 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
                     double* solution,
                     double step_size) {
 
-    constexpr double eps_omega = 1e-2; 
-    constexpr double eps_v     = 1e-3; 
+    constexpr double eps_omega = 1e-3; 
+    constexpr double eps_v     = 1e-4; 
 
     const int num_joints = _qpos_indices.size();
     const int nv = _model->nv;
@@ -36,7 +36,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
     std::vector<mjtNum> jacp(3 * nv);
     std::vector<mjtNum> jacr(3 * nv);
 
-    for (size_t i = 0; i < _iterations; ++i) {
+    for (int i = 0; i < _iterations; ++i) {
         
         mju_copy(_data_ik->qpos, _data->qpos, nq);
 

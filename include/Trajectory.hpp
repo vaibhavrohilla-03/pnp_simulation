@@ -26,9 +26,9 @@ class Trajectory3D {
             Spline() = default;
             Spline(const std::vector<double>& points_x, const std::vector<double>& points_y);
             
-            const double evaluate(double sample) const;
-            const double evaluate_velocity(double sample) const;
-            const double evaluate_acceleration(double sample) const;
+            double evaluate(double sample) const;
+            double evaluate_velocity(double sample) const;
+            double evaluate_acceleration(double sample) const;
             
             const std::vector<double> dense_evaluate(const std::vector<double>& query_x);
             
@@ -37,8 +37,7 @@ class Trajectory3D {
             std::vector<double> _points_y;
             std::vector<double> _M;
             
-            std::vector<double> solve_tridiagonal(std::vector<double>& u, std::vector<double>& lambda, std::vector<double> d);
-    
+            std::vector<double> solve_tridiagonal(const std::vector<double>& u, const std::vector<double>& lambda, const std::vector<double>& d);
         };
         
         std::vector<double> _waypoints;

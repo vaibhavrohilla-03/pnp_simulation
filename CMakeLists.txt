@@ -4,6 +4,8 @@ project(pnp_simulation)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(-Wall -Wextra -Wpedantic)
+
 find_path(MUJOCO_INCLUDE_DIR mujoco/mujoco.h PATHS /opt/mujoco/include)
 find_library(MUJOCO_LIBRARY  mujoco PATHS /opt/mujoco/lib)
 

@@ -60,6 +60,7 @@ CMakeLists.txt.user*
 
 MUJOCO_LOG.TXT
 MJMODEL.TXT
+output.txt
 study_reference
 imgui.ini
 workspace.code-workspace
