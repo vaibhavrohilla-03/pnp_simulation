@@ -44,7 +44,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
             _data_ik->qpos[_qpos_indices[i]] = theta(i);
         }
         
-        mj_fwdPosition(_model, _data_ik);
+        mj_fwdPosition(_model, _data_ik.get());
 
         Eigen::Vector3d pos(_data_ik->site_xpos[_ee_site_id * 3], 
                             _data_ik->site_xpos[_ee_site_id * 3 + 1], 
@@ -66,7 +66,7 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
             return true;
         }
 
-        mj_jacSite(_model, _data_ik, jacp.data(), jacr.data(), _ee_site_id);
+        mj_jacSite(_model, _data_ik.get(), jacp.data(), jacr.data(), _ee_site_id);
         Eigen::MatrixXd j_pos_world = Eigen::Map<const Eigen::Matrix<double, 3, Eigen::Dynamic, Eigen::RowMajor>>(
             jacp.data(), 3, nv
         );
@@ -99,7 +99,7 @@ void Ik_solver::initialize(const std::string& site) {
     _base_id = mj_name2id(_model, mjOBJ_BODY, "base");
     if (_base_id == -1) _base_id = 0;
     _ee_site_id = mj_name2id(_model, mjOBJ_SITE, site.c_str());
-    _data_ik = mj_makeData(_model);
+    _data_ik.reset(mj_makeData(_model));
     
     if(_ee_site_id == -1) {return;}
     

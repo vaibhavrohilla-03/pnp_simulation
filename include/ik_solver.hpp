@@ -1,6 +1,7 @@
 #pragma once
 #include <eigen3/Eigen/Eigen>
 #include "mujoco/mujoco.h"
+#include "mujoco_raii.hpp"
 
 class Ik_solver {
 
@@ -15,12 +16,6 @@ class Ik_solver {
             
         inline int get_num_joints() const {return _qpos_indices.size();}
 
-        ~Ik_solver() {
-            if (_data_ik) {
-                mj_deleteData(_data_ik);
-            }
-        }
-
 
     private:
         int _iterations;
@@ -29,7 +24,7 @@ class Ik_solver {
         
         const mjModel* _model;
         const mjData* _data;
-        mjData* _data_ik;
+        mujoco_raii::DataPtr _data_ik;
 
         std::vector<int> _kinematic_tree;
         std::vector<int> _qpos_indices;

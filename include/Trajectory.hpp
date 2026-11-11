@@ -5,7 +5,7 @@
 class Trajectory3D {
 
     public: 
-
+        Trajectory3D() = default;
         Trajectory3D(const std::vector<double> timestamps, const std::vector<double>& waypoints, int sample = 100);
         void solve(const std::vector<double>& waypoints);
         
@@ -18,6 +18,13 @@ class Trajectory3D {
         bool is_finished(double t) const { return t >= _timestamps.back(); }
         
         std::vector<double> dense_path;
+
+        inline void operator()(const std::vector<double> timestamps, const std::vector<double>& waypoints, int sample = 100) {
+            _waypoints = waypoints;
+            _timestamps = timestamps;
+            _sample = sample;
+            solve(_waypoints);
+        }
 
     private:
         class Spline {
@@ -41,7 +48,7 @@ class Trajectory3D {
         };
         
         std::vector<double> _waypoints;
-        const std::vector<double> _timestamps;
+        std::vector<double> _timestamps;
         int _sample;
         Spline spline_x;
         Spline spline_y;
