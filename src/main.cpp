@@ -13,7 +13,7 @@
 #include "controller.hpp"
 #include "Trajectory.hpp"
 #include "mujoco_raii.hpp"
-
+#include <span>
 struct GlfwWindowDeleter {
     void operator()(GLFWwindow* window) const noexcept {
         if (window != nullptr) {
@@ -292,7 +292,7 @@ void simulate_loop() {
                 mj_step1(model.get(), data.get());
 
                 if(solved) {
-                    controller(target_pos, target_rot, tau_cmd.data());
+                    controller(target_pos, target_rot, tau_cmd);
                     controller.applyTorques(tau_cmd.data());
                 }
 

@@ -98,7 +98,9 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
     }
 }
 
-void Controller::operator()(const double* target_ee_pos, const double* target_ee_rotation, double* tau_out) {
+void Controller::operator()(std::span<const double, 3> target_ee_pos, 
+                    std::span<const double, 3> target_ee_rotation, 
+                    std::span<double> tau_out) {
 
     Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
         Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
@@ -107,11 +109,11 @@ void Controller::operator()(const double* target_ee_pos, const double* target_ee
         Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
         Eigen::Matrix3d rotation = (yaw * pitch * roll).toRotationMatrix();
 
-        // 2. Compute OSC Torques
+        assert(tau_out.size() == static_cast<std::size_t>(_num_joints));
         Eigen::VectorXd tau(_num_joints);
         update(pos, rotation, tau);
 
-        Eigen::Map<Eigen::VectorXd>(tau_out, _num_joints) = tau;
+        Eigen::Map<Eigen::VectorXd>(tau_out.data(), _num_joints) = tau;
 }
 
 void Controller::initialize(const std::string& site) {

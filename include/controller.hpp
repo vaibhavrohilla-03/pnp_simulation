@@ -3,6 +3,7 @@
 #include "mujoco/mujoco.h"
 #include <vector>
 #include <eigen3/Eigen/Eigen>
+#include <span>
 class Controller {
 
     public:
@@ -21,9 +22,9 @@ class Controller {
         double Kp_rot, Kd_rot;
         double Kp_null, Kd_null;
 
-        void operator()(const double* target_ee_pos, 
-                    const double* target_ee_rotation, 
-                    double* tau_out);
+        void operator()(std::span<const double, 3> target_ee_pos, 
+                    std::span<const double, 3> target_ee_rotation, 
+                    std::span<double> tau_out);
 
         void applyTorques(const double* tau);
         void setTorqueMode(bool enable);

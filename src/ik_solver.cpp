@@ -1,8 +1,8 @@
 #include "ik_solver.hpp"
 #include "Utils.h"
 #include <cmath>
-bool Ik_solver::operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            std::vector<double>& initial_guess, std::vector<double>& solution, const size_t num_joints, double step_size) {
+bool Ik_solver::operator()(std::span<double, 3> target_ee_pos, std::span<double, 3> target_ee_rotation, 
+            std::span<double> initial_guess, std::span<double> solution, const size_t num_joints, double step_size) {
         
         Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
         Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());

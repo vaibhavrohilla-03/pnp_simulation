@@ -1,5 +1,7 @@
 #pragma once
 #include <eigen3/Eigen/Eigen>
+#include <span>
+
 #include "mujoco/mujoco.h"
 #include "mujoco_raii.hpp"
 
@@ -11,8 +13,8 @@ class Ik_solver {
                 initialize(ee_site);
         }   
 
-        bool operator()(const double* target_ee_pos, const double* target_ee_rotation, 
-            std::vector<double>& initial_guess, std::vector<double>& solution, const size_t num_joints, double step_size);
+        bool operator()(std::span<double, 3> target_ee_pos, std::span<double, 3> target_ee_rotation, 
+            std::span<double> initial_guess, std::span<double> solution, const size_t num_joints, double step_size);
             
         inline int get_num_joints() const {return _qpos_indices.size();}
 
