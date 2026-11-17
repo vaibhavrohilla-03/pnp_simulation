@@ -2,6 +2,8 @@
 
 #include <vector>
 
+namespace pnp::traj {
+
 class Trajectory3D {
 
     public: 
@@ -54,3 +56,5 @@ class Trajectory3D {
         Spline spline_y;
         Spline spline_z;
 };
+
+}

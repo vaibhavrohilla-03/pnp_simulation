@@ -1,5 +1,7 @@
 #include "fk_solver_ur5.hpp"
 
+namespace pnp::fk {
+
 Eigen::Isometry3d FK_Solver::solve() {
 
     Eigen::Isometry3d current_chain = Eigen::Isometry3d::Identity();
@@ -39,5 +41,7 @@ Eigen::Isometry3d FK_Solver::solve() {
     }
 
     return current_chain;    
+}
+
 }
 

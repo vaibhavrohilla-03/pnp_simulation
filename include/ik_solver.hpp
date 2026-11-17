@@ -5,6 +5,8 @@
 #include "mujoco/mujoco.h"
 #include "mujoco_raii.hpp"
 
+namespace pnp::ik {
+
 class Ik_solver {
 
     public:
@@ -37,9 +39,10 @@ class Ik_solver {
         bool solve(Eigen::Vector3d& target_ee_pos, 
             Eigen::Matrix3d& target_ee_rotation, 
             Eigen::VectorXd& initial_guess, 
-            double* solution, 
+            double* solution,
             double step_size);
 
-        
-        
+
 };
+
+}

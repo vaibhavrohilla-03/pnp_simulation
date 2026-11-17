@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
+namespace pnp::traj {
 
 Trajectory3D::Trajectory3D(const std::vector<double> timestamps, 
                                const std::vector<double>& waypoints, 
@@ -258,3 +259,5 @@ const std::vector<double> Trajectory3D::Spline::dense_evaluate(const std::vector
 
         return results;
     }
+
+}

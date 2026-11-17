@@ -2,6 +2,9 @@
 
 #include <eigen3/Eigen/Eigen>
 #include "mujoco/mujoco.h"
+
+namespace pnp::fk {
+
 class FK_Solver {
     public:
         inline FK_Solver(const std::string& end_effector, const mjModel* model, const mjData* data) 
@@ -40,3 +43,5 @@ class FK_Solver {
 
         
 };
+
+}

@@ -1,6 +1,9 @@
 #include "ik_solver.hpp"
 #include "Utils.h"
 #include <cmath>
+
+namespace pnp::ik {
+
 bool Ik_solver::operator()(std::span<double, 3> target_ee_pos, std::span<double, 3> target_ee_rotation, 
             std::span<double> initial_guess, std::span<double> solution, const size_t num_joints, double step_size) {
         
@@ -121,4 +124,6 @@ void Ik_solver::initialize(const std::string& site) {
         
     }
         
+}
+
 }

@@ -1,5 +1,7 @@
 #include "controller.hpp"
 
+namespace pnp::control {
+
 void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d& target_rot, Eigen::VectorXd& tau_out) {
 
     if (_is_first_step) {
@@ -226,4 +228,6 @@ void Controller::applyTorques(const double* tau) {
             _data->ctrl[act_id] = tau[i];
         }
     }
+}
+
 }

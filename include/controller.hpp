@@ -1,9 +1,11 @@
 #pragma once 
-
 #include "mujoco/mujoco.h"
 #include <vector>
 #include <eigen3/Eigen/Eigen>
 #include <span>
+
+namespace pnp::control {
+
 class Controller {
 
     public:
@@ -63,3 +65,5 @@ class Controller {
         const mjData* _data;
     
 };
+
+}

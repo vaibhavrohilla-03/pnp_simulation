@@ -34,6 +34,9 @@ target_sources(playground PRIVATE
     src/ik_solver.cpp
     src/controller.cpp
     src/Trajectory.cpp
+    src/viewer.cpp
+    src/ui.cpp
+    src/helpers.cpp
 )
 
 
