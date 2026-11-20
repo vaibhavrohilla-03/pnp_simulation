@@ -24,8 +24,7 @@ class Ik_solver {
     private:
         int _iterations;
         int _ee_site_id;
-        int _base_id;
-        
+
         const mjModel* _model;
         const mjData* _data;
         mujoco_raii::DataPtr _data_ik;

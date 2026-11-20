@@ -1,8 +1,9 @@
-#include "controller.hpp"
+#include "osc_controller.hpp"
+#include "Utils.hpp"
 
 namespace pnp::control {
 
-void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d& target_rot, Eigen::VectorXd& tau_out) {
+void OscController::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d& target_rot, Eigen::VectorXd& tau_out) {
 
     if (_is_first_step) {
         _prev_target_pos = target_pos;
@@ -100,47 +101,29 @@ void Controller::update(const Eigen::Vector3d& target_pos, const Eigen::Matrix3d
     }
 }
 
-void Controller::operator()(std::span<const double, 3> target_ee_pos, 
+void OscController::operator()(std::span<const double, 3> target_ee_pos, 
                     std::span<const double, 3> target_ee_rotation, 
                     std::span<double> tau_out) {
 
-    Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
-        Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
-        Eigen::AngleAxisd yaw(target_ee_rotation[2], Eigen::Vector3d::UnitZ());
+    Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
+    Eigen::Matrix3d rotation = Utils::euler_to_rotation(
+        target_ee_rotation[0], target_ee_rotation[1], target_ee_rotation[2]);
 
-        Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
-        Eigen::Matrix3d rotation = (yaw * pitch * roll).toRotationMatrix();
+    assert(tau_out.size() == static_cast<std::size_t>(_num_joints));
+    Eigen::VectorXd tau(_num_joints);
+    update(pos, rotation, tau);
 
-        assert(tau_out.size() == static_cast<std::size_t>(_num_joints));
-        Eigen::VectorXd tau(_num_joints);
-        update(pos, rotation, tau);
-
-        Eigen::Map<Eigen::VectorXd>(tau_out.data(), _num_joints) = tau;
+    Eigen::Map<Eigen::VectorXd>(tau_out.data(), _num_joints) = tau;
 }
 
-void Controller::initialize(const std::string& site) {
+void OscController::initialize(const std::string& site) {
     
     _ee_site_id = mj_name2id(_model, mjOBJ_SITE, site.c_str());
-    _base_id = mj_name2id(_model, mjOBJ_BODY, "base");
-    if (_base_id == -1) _base_id = 0;
-    
-    int ee_body_id = _model->site_bodyid[_ee_site_id];
-    int current = ee_body_id;
-    
-    while (current != _base_id && current > 0) {
-                _kinematic_tree.push_back(current);
-                current = _model->body_parentid[current];
-            }
-    _kinematic_tree.push_back(_base_id);
-    std::reverse(_kinematic_tree.begin(), _kinematic_tree.end());
-            
-    for (int body_id : _kinematic_tree) {
-        int jnt_id = _model->body_jntadr[body_id];
-        if (jnt_id != -1) {
-            _dof_indices.push_back(_model->jnt_dofadr[jnt_id]);
-        }
-    }
-        
+
+    auto chain = Utils::get_kinematic_chain(_model, _model->site_bodyid[_ee_site_id]);
+    _kinematic_tree = chain.bodies;
+    _dof_indices = chain.dof_indices;
+
     _num_joints = _dof_indices.size();
     
     _actuator_indices.clear();
@@ -193,7 +176,7 @@ void Controller::initialize(const std::string& site) {
     setTorqueMode(true);
 }
 
-void Controller::setTorqueMode(bool enable) {
+void OscController::setTorqueMode(bool enable) {
     for (size_t i = 0; i < _num_joints; ++i) {
         int act_id = _actuator_indices[i];
         if (act_id < 0 || act_id >= _model->nu) continue;
@@ -220,7 +203,7 @@ void Controller::setTorqueMode(bool enable) {
     }
 }
 
-void Controller::applyTorques(const double* tau) {
+void OscController::applyTorques(const double* tau) {
 
     for (size_t i = 0; i < _num_joints; ++i) {
         int act_id = _actuator_indices[i];

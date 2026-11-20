@@ -6,10 +6,10 @@
 
 namespace pnp::control {
 
-class Controller {
+class OscController {
 
     public:
-        Controller(const std::string& ee_site, mjModel* model, const mjData* data)
+        OscController(const std::string& ee_site, mjModel* model, const mjData* data)
         : _is_first_step(true), _model(model), _data(data)  {
             
             Kp_pos = 100.0;
@@ -46,7 +46,6 @@ class Controller {
                     Eigen::VectorXd& tau_out);
 
         int _ee_site_id;
-        int _base_id;
 
         size_t _num_joints;
         

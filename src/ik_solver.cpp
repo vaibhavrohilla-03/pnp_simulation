@@ -1,5 +1,5 @@
 #include "ik_solver.hpp"
-#include "Utils.h"
+#include "Utils.hpp"
 #include <cmath>
 
 namespace pnp::ik {
@@ -7,12 +7,9 @@ namespace pnp::ik {
 bool Ik_solver::operator()(std::span<double, 3> target_ee_pos, std::span<double, 3> target_ee_rotation, 
             std::span<double> initial_guess, std::span<double> solution, const size_t num_joints, double step_size) {
         
-        Eigen::AngleAxisd roll(target_ee_rotation[0], Eigen::Vector3d::UnitX());
-        Eigen::AngleAxisd pitch(target_ee_rotation[1], Eigen::Vector3d::UnitY());
-        Eigen::AngleAxisd yaw(target_ee_rotation[2], Eigen::Vector3d::UnitZ());
-        
         Eigen::Vector3d pos(target_ee_pos[0], target_ee_pos[1], target_ee_pos[2]);
-        Eigen::Matrix3d rotation = (yaw * pitch * roll).toRotationMatrix();
+        Eigen::Matrix3d rotation = Utils::euler_to_rotation(
+            target_ee_rotation[0], target_ee_rotation[1], target_ee_rotation[2]);
 
         Eigen::VectorXd guess = Eigen::Map<Eigen::VectorXd>(initial_guess.data(), num_joints);
         
@@ -98,32 +95,16 @@ bool Ik_solver::solve(Eigen::Vector3d& target_ee_pos,
 }
 
 void Ik_solver::initialize(const std::string& site) {
-    
-    _base_id = mj_name2id(_model, mjOBJ_BODY, "base");
-    if (_base_id == -1) _base_id = 0;
+
     _ee_site_id = mj_name2id(_model, mjOBJ_SITE, site.c_str());
     _data_ik.reset(mj_makeData(_model));
-    
+
     if(_ee_site_id == -1) {return;}
-    
-    int ee_body_id = _model->site_bodyid[_ee_site_id];
-    int current = ee_body_id;
-    while (current != _base_id && current > 0) {
-        _kinematic_tree.push_back(current);
-        current = _model->body_parentid[current];
-    }
-    _kinematic_tree.push_back(_base_id);
-    std::reverse(_kinematic_tree.begin(), _kinematic_tree.end());
-    
-    for (int body_id : _kinematic_tree) {
-        int jnt_id = _model->body_jntadr[body_id];
-        if (jnt_id != -1) {
-            _qpos_indices.push_back(_model->jnt_qposadr[jnt_id]);
-            _dof_indices.push_back(_model->jnt_dofadr[jnt_id]);
-        }
-        
-    }
-        
+
+    auto chain = Utils::get_kinematic_chain(_model, _model->site_bodyid[_ee_site_id]);
+    _kinematic_tree = chain.bodies;
+    _qpos_indices = chain.qpos_indices;
+    _dof_indices = chain.dof_indices;
 }
 
 }

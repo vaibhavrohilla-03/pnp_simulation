@@ -2,6 +2,7 @@
 
 #include <eigen3/Eigen/Eigen>
 #include "mujoco/mujoco.h"
+#include "Utils.hpp"
 
 namespace pnp::fk {
 
@@ -16,15 +17,8 @@ class FK_Solver {
 
             if(_parent_id > _id) {return;}
 
-            int current = _id;
-            while(current != _parent_id && current > 0) {
-                kinematic_tree.push_back(current);
-                current = model->body_parentid[current];
-            }
+            kinematic_tree = Utils::get_kinematic_chain(model, _id, _parent_id).bodies;
 
-            kinematic_tree.push_back(_parent_id);
-            std::reverse(kinematic_tree.begin(), kinematic_tree.end());
-            
         }
         std::vector<int> kinematic_tree;
 

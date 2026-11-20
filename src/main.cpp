@@ -9,7 +9,7 @@
 #include "imgui_impl_opengl3.h"
 
 #include "ik_solver.hpp"
-#include "controller.hpp"
+#include "osc_controller.hpp"
 #include "Trajectory.hpp"
 #include "mujoco_raii.hpp"
 #include "app/viewer.hpp"
@@ -17,7 +17,7 @@
 #include "app/helpers.hpp"
 
 using pnp::ik::Ik_solver;
-using pnp::control::Controller;
+using pnp::control::OscController;
 using pnp::traj::Trajectory3D;
 using pnp::app::SimState;
 using pnp::app::Viewer;
@@ -26,7 +26,7 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
 
     Ik_solver solver("gripper_pinch", model.get(), data.get(), 50);
     const size_t num_joints = solver.get_num_joints();
-    Controller controller("gripper_pinch", model.get(), data.get());
+    OscController osc_controller("gripper_pinch", model.get(), data.get());
     std::vector<double> initial_pos(num_joints);
     for (size_t i = 0; i < num_joints; ++i) {
         initial_pos[i] = data->qpos[i];
@@ -52,7 +52,7 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
         mj_forward(model.get(), data.get());
     };
 
-    controller.setTorqueMode(state.use_osc_controller);
+    osc_controller.setTorqueMode(state.use_osc_controller);
 
     std::vector<double> timestamps;
     std::vector<double> waypoints;
@@ -102,12 +102,12 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
         while(data->time - simstart < 1.0/60.0) {
 
             if (state.use_osc_controller) {
-                controller.setTorqueMode(state.use_osc_controller);
+                osc_controller.setTorqueMode(state.use_osc_controller);
                 mj_step1(model.get(), data.get());
 
                 if(solved) {
-                    controller(target_pos, target_rot, tau_cmd);
-                    controller.applyTorques(tau_cmd.data());
+                    osc_controller(target_pos, target_rot, tau_cmd);
+                    osc_controller.applyTorques(tau_cmd.data());
                 }
 
                 mj_step2(model.get(), data.get());
