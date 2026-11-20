@@ -1,5 +1,6 @@
 #pragma once
 
+#include "functional"
 namespace pnp::app {
 
 struct SimState {
@@ -10,6 +11,8 @@ struct SimState {
     bool use_trajectory = false;
 
     double traj_start_time = -1.0;
+
+    std::function<void()> reset_appstate;
 };
 
 }

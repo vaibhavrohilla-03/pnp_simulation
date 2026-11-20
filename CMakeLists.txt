@@ -35,7 +35,6 @@ target_sources(playground PRIVATE
     src/controller.cpp
     src/Trajectory.cpp
     src/viewer.cpp
-    src/ui.cpp
     src/helpers.cpp
 )
 

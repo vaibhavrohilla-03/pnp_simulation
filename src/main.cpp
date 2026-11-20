@@ -13,7 +13,6 @@
 #include "Trajectory.hpp"
 #include "mujoco_raii.hpp"
 #include "app/viewer.hpp"
-#include "app/ui.hpp"
 #include "app/state.hpp"
 #include "app/helpers.hpp"
 
@@ -22,7 +21,6 @@ using pnp::control::Controller;
 using pnp::traj::Trajectory3D;
 using pnp::app::SimState;
 using pnp::app::Viewer;
-using pnp::app::draw_panel;
 
 void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Viewer& viewer) {
 
@@ -48,6 +46,12 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
     state.r_target_z = -1.57079f;
     state.use_osc_controller = false;
     state.use_trajectory = false;
+
+    state.reset_appstate = [&model, &data]() {
+        mj_resetDataKeyframe(model.get(), data.get(), 0);
+        mj_forward(model.get(), data.get());
+    };
+
     controller.setTorqueMode(state.use_osc_controller);
 
     std::vector<double> timestamps;
@@ -75,9 +79,9 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
 
         // If trajectory mode is active, override target_pos from spline
         if (state.use_trajectory) {
-        if (state.traj_start_time < 0.0) {
-            state.traj_start_time = data->time;   // record when we started
-        }
+            if (state.traj_start_time < 0.0) {
+                state.traj_start_time = data->time;   // record when we started
+            }    
             double elapsed = data->time - state.traj_start_time;
             if (!traj.is_finished(elapsed)) {
                 double traj_pos[3];
@@ -85,8 +89,7 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
                 target_pos[0] = traj_pos[0];
                 target_pos[1] = traj_pos[1];
                 target_pos[2] = traj_pos[2];
-            } else {
-
+            } else {   
                 state.traj_start_time = data->time;
             }
         }
@@ -99,6 +102,7 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
         while(data->time - simstart < 1.0/60.0) {
 
             if (state.use_osc_controller) {
+                controller.setTorqueMode(state.use_osc_controller);
                 mj_step1(model.get(), data.get());
 
                 if(solved) {
@@ -114,7 +118,7 @@ void simulate_loop(mujoco_raii::ModelPtr& model, mujoco_raii::DataPtr& data, Vie
                 mj_step(model.get(), data.get());
             }
         }
-        draw_panel(state, controller, solved, data->time, traj, model.get(), data.get());
+        pnp::app::ui::draw_panel(state, solved, data->time, traj.end_time(), traj.start_time(), state.reset_appstate);
         viewer.updateframe();
 
     }
