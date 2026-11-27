@@ -7,7 +7,7 @@
 namespace pnp::app {
 
     void get_cube_position(const mjModel* model, const mjData* data,
-        const std::string& cube_name, double (&pos)[3]);
+        const std::string& cube_name, std::array<double, 3>& pos);
         
     void build_circle_trajectory(std::vector<double>& timestamps,
         std::vector<double>& waypoints);

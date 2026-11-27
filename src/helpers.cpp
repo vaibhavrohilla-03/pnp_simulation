@@ -5,7 +5,7 @@
 namespace pnp::app {
 
 void get_cube_position(const mjModel* model, const mjData* data,
-    const std::string& cube_name, double (&pos)[3]) {
+    const std::string& cube_name, std::array<double, 3>& pos) {
 
     int body_id = mj_name2id(model, mjOBJ_BODY, cube_name.c_str());
 
